@@ -3,6 +3,7 @@ package csv
 import (
 	"encoding/base64"
 	"encoding/csv"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"os"
 )
@@ -46,4 +47,18 @@ func OpenAndEncodeCSV(filename string) (encodecsv string, err error) {
 	}
 	encodecsv = base64.StdEncoding.EncodeToString(csvFileContents)
 	return
+}
+
+func CSVLoader(path string) [][]string {
+	op, err := os.Open(path)
+	if err != nil {
+		fmt.Printf("Cant open the csv : %s || %s", path, err.Error())
+	}
+	defer op.Close()
+	reader := csv.NewReader(op)
+	rows, err := reader.ReadAll()
+	if err != nil {
+		fmt.Printf("Cant Read the csv file : %s", err.Error())
+	}
+	return rows
 }
