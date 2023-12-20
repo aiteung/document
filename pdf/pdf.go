@@ -83,3 +83,28 @@ func SetHeaderTable(pdf *gofpdf.Fpdf, hdr []string, widths []float64) *gofpdf.Fp
 	pdf.Ln(-1)
 	return pdf
 }
+
+func SetTableContent(pdf *gofpdf.Fpdf, tbl [][]string, widths []float64, align []string) *gofpdf.Fpdf {
+	pdf.SetFont("Times", "", 8)
+	pdf.SetFillColor(255, 255, 255)
+
+	for _, line := range tbl {
+		// Calculate the total width of the table
+		totalWidth := 0.0
+		for _, width := range widths {
+			totalWidth += width
+		}
+
+		// Calculate the X-coordinate to center the table on the page
+		pageWidth, _ := pdf.GetPageSize()
+		x := (pageWidth - totalWidth) / 2
+
+		// Set the X-coordinate
+		pdf.SetX(x)
+		for i, str := range line {
+			pdf.CellFormat(widths[i], 7, str, "1", 0, align[i], true, 0, "")
+		}
+		pdf.Ln(-1)
+	}
+	return pdf
+}
