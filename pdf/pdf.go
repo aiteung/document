@@ -34,3 +34,24 @@ func AddNameText(pdf *gofpdf.Fpdf, Text string, spacing, x, size float64) *gofpd
 
 	return pdf
 }
+
+func SetMergedCell(pdf *gofpdf.Fpdf, text string, width float64) *gofpdf.Fpdf {
+	pdf.SetFont("Times", "B", 10)
+	pdf.SetFillColor(255, 165, 0)
+	totalWidth := 0.0
+	totalWidth += width
+
+	// Calculate the X-coordinate to center the table on the page
+	pageWidth, _ := pdf.GetPageSize()
+	x := (pageWidth - totalWidth) / 2
+
+	// Set the X-coordinate
+	pdf.SetX(x)
+
+	// Create 6 cells that make up the merged cell
+	pdf.CellFormat(width, 7, text, "1", 0, "L", true, 0, "")
+
+	// Move to the next line
+	pdf.Ln(-1)
+	return pdf
+}
