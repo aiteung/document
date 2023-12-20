@@ -55,3 +55,31 @@ func SetMergedCell(pdf *gofpdf.Fpdf, text string, width float64) *gofpdf.Fpdf {
 	pdf.Ln(-1)
 	return pdf
 }
+
+func SetHeaderTable(pdf *gofpdf.Fpdf, hdr []string, widths []float64) *gofpdf.Fpdf {
+	pdf.SetFont("Times", "B", 8)
+	pdf.SetFillColor(240, 240, 240)
+	// Calculate the total width of the table
+	totalWidth := 0.0
+	for _, width := range widths {
+		totalWidth += width
+	}
+
+	// Calculate the X-coordinate to center the table on the page
+	pageWidth, _ := pdf.GetPageSize()
+	x := (pageWidth - totalWidth) / 2
+
+	// Set the X-coordinate
+	pdf.SetX(x)
+	for i, str := range hdr {
+		// The `CellFormat()` method takes a couple of parameters to format
+		// the cell. We make use of this to create a visible border around
+		// the cell, and to enable the background fill.
+		pdf.CellFormat(widths[i], 7, str, "1", 0, "C", true, 0, "")
+	}
+
+	// Passing `-1` to `Ln()` uses the height of the last printed cell as
+	// the line height.
+	pdf.Ln(-1)
+	return pdf
+}
