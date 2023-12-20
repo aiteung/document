@@ -108,3 +108,15 @@ func SetTableContent(pdf *gofpdf.Fpdf, tbl [][]string, widths []float64, align [
 	}
 	return pdf
 }
+
+func ImagePdf(pdf *gofpdf.Fpdf, filename, urlimage string) *gofpdf.Fpdf {
+	if !FileExists(filename) {
+		DownloadFile(filename, urlimage)
+	}
+	pdf.ImageOptions(filename, 12, 16, 20, 10, false, gofpdf.ImageOptions{ImageType: "PNG", ReadDpi: true}, 0, "")
+	return pdf
+}
+
+func SavePDF(pdf *gofpdf.Fpdf, path string) error {
+	return pdf.OutputFileAndClose(path)
+}
