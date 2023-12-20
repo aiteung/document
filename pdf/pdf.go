@@ -19,3 +19,18 @@ func AddHeadText(pdf *gofpdf.Fpdf, spacing, x float64, align, text string) *gofp
 
 	return pdf
 }
+
+func AddNameText(pdf *gofpdf.Fpdf, Text string, spacing, x, size float64) *gofpdf.Fpdf {
+
+	pdf.SetFont("Times", "B", size)
+	//pdf.Text(137, 138, Text)
+	pdf.SetX(x)
+	pdf.CellFormat(0, 10, Text, "0", 0, "C", false, 0, "")
+	pdf.Ln(0.5 * size)
+
+	currentY := pdf.GetY()
+
+	pdf.SetY(currentY + spacing)
+
+	return pdf
+}
