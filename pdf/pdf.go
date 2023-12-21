@@ -38,9 +38,9 @@ func AddNameText(pdf *gofpdf.Fpdf, Text string, spacing, x, size float64) *gofpd
 	return pdf
 }
 
-func SetMergedCell(pdf *gofpdf.Fpdf, text string, width float64) *gofpdf.Fpdf {
+func SetMergedCell(pdf *gofpdf.Fpdf, text string, width float64, rgb []int) *gofpdf.Fpdf {
 	pdf.SetFont("Times", "B", 10)
-	pdf.SetFillColor(255, 165, 0)
+	pdf.SetFillColor(rgb[0], rgb[1], rgb[2])
 	totalWidth := 0.0
 	totalWidth += width
 
@@ -80,9 +80,9 @@ func SetMergedCellSkyBlue(pdf *gofpdf.Fpdf, text string, width float64) *gofpdf.
 	return pdf
 }
 
-func SetHeaderTable(pdf *gofpdf.Fpdf, hdr []string, widths []float64) *gofpdf.Fpdf {
+func SetHeaderTable(pdf *gofpdf.Fpdf, hdr []string, widths []float64, rgb []int) *gofpdf.Fpdf {
 	pdf.SetFont("Times", "B", 8)
-	pdf.SetFillColor(240, 240, 240)
+	pdf.SetFillColor(rgb[0], rgb[1], rgb[2])
 	// Calculate the total width of the table
 	totalWidth := 0.0
 	for _, width := range widths {
