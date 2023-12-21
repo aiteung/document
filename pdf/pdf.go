@@ -120,3 +120,25 @@ func ImagePdf(pdf *gofpdf.Fpdf, filename, urlimage string) *gofpdf.Fpdf {
 func SavePDF(pdf *gofpdf.Fpdf, path string) error {
 	return pdf.OutputFileAndClose(path)
 }
+
+func SignatureImage(pdf *gofpdf.Fpdf, filename string, x, spacing float64, textlines []string, textYOffset float64) *gofpdf.Fpdf {
+	currentY := pdf.GetY()
+	y := currentY + spacing
+
+	pdf.ImageOptions(filename, x, y, 30, 30, false, gofpdf.ImageOptions{ImageType: "PNG", ReadDpi: true}, 0, "")
+	pdf.Ln(-1)
+
+	textX := x - 42          // Use the same x position as the image
+	textY := y + textYOffset // Adjust the Y position based on the offset
+
+	pdf.SetFont("Times", "B", 9)
+	pdf.SetXY(textX-2, textY-6)
+
+	// Add two lines of text using CellFormat
+	pdf.CellFormat(0, 10, textlines[0], "0", 0, "C", false, 0, "")
+
+	// Add the second line of text using Text
+	pdf.Text(textX+56, textY+5, textlines[1])
+
+	return pdf
+}
