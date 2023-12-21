@@ -189,3 +189,9 @@ func truncateToThreeWords(s string) string {
 	}
 	return s
 }
+
+func AddText(pdf *gofpdf.Fpdf, x, y float64, text string) *gofpdf.Fpdf {
+	pdf.SetFont("Times", "", 9)
+	pdf.Text(x, y, text)
+	return pdf
+}
