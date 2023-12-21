@@ -38,7 +38,7 @@ func AddNameText(pdf *gofpdf.Fpdf, Text string, spacing, x, size float64) *gofpd
 	return pdf
 }
 
-func SetMergedCell(pdf *gofpdf.Fpdf, text string, width float64, rgb []int) *gofpdf.Fpdf {
+func SetMergedCell(pdf *gofpdf.Fpdf, text, align string, width float64, rgb []int) *gofpdf.Fpdf {
 	pdf.SetFont("Times", "B", 10)
 	pdf.SetFillColor(rgb[0], rgb[1], rgb[2])
 	totalWidth := 0.0
@@ -52,7 +52,7 @@ func SetMergedCell(pdf *gofpdf.Fpdf, text string, width float64, rgb []int) *gof
 	pdf.SetX(x)
 
 	// Create 6 cells that make up the merged cell
-	pdf.CellFormat(width, 7, text, "1", 0, "L", true, 0, "")
+	pdf.CellFormat(width, 7, text, "1", 0, align, true, 0, "")
 
 	// Move to the next line
 	pdf.Ln(-1)
