@@ -1,6 +1,9 @@
 package pdf
 
-import "github.com/jung-kurt/gofpdf"
+import (
+	"github.com/jung-kurt/gofpdf"
+	"strings"
+)
 
 func AddHeadText(pdf *gofpdf.Fpdf, spacing, x float64, align, text string) *gofpdf.Fpdf {
 	pdf.SetFont("Times", "B", 9)
@@ -141,4 +144,48 @@ func SignatureImage(pdf *gofpdf.Fpdf, filename string, x, spacing float64, textl
 	pdf.Text(textX+56, textY+5, textlines[1])
 
 	return pdf
+}
+
+func SetKambingContent(pdf *gofpdf.Fpdf, tbl [][]string, widths []float64, align []string) *gofpdf.Fpdf {
+	pdf.SetFont("Times", "", 8)
+	pdf.SetFillColor(255, 255, 255)
+
+	for _, line := range tbl {
+		// Calculate the total width of the table
+		totalWidth := 0.0
+		for _, width := range widths {
+			totalWidth += width
+		}
+
+		// Calculate the X-coordinate to center the table on the page
+		pageWidth, _ := pdf.GetPageSize()
+		x := (pageWidth - totalWidth) / 2
+
+		// Set the X-coordinate
+		pdf.SetX(x)
+
+		// Truncate line[2] and line[3] to the first 3 words
+		truncatedLine2 := truncateToThreeWords(line[2])
+		truncatedLine3 := truncateToThreeWords(line[3])
+
+		// Replace the original lines with truncated versions
+		line[2] = truncatedLine2
+		line[3] = truncatedLine3
+
+		for i, str := range line {
+			pdf.CellFormat(widths[i], 7, str, "1", 0, align[i], true, 0, "")
+		}
+		pdf.Ln(-1)
+	}
+
+	return pdf
+}
+
+func truncateToThreeWords(s string) string {
+	words := strings.Fields(s)
+	if len(words) > 4 {
+		join := strings.Join(words[:4], " ")
+		return join + "..."
+	}
+	return s
 }
