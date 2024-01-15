@@ -217,10 +217,17 @@ func AddText(pdf *gofpdf.Fpdf, x, y float64, text string) *gofpdf.Fpdf {
 	return pdf
 }
 
-func ImageCustomize(pdf *gofpdf.Fpdf, filename, urlimage string, x, y, w, h float64) *gofpdf.Fpdf {
+func ImageCustomize(pdf *gofpdf.Fpdf, filename, urlimage string, x, y, w, h, borderWidth float64) *gofpdf.Fpdf {
 	if !FileExists(filename) {
 		DownloadFile(filename, urlimage)
 	}
+
+	// Draw the image
 	pdf.ImageOptions(filename, x, y, w, h, false, gofpdf.ImageOptions{ImageType: "PNG", ReadDpi: true}, 0, "")
+
+	// Draw a border around the image
+	pdf.SetLineWidth(borderWidth)
+	pdf.Rect(x, y, w, h, "D")
+
 	return pdf
 }
