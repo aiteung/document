@@ -225,9 +225,5 @@ func ImageCustomize(pdf *gofpdf.Fpdf, filename, urlimage string, x, y, w, h, wim
 	// Draw the image
 	pdf.ImageOptions(filename, x, y, w, h, false, gofpdf.ImageOptions{ImageType: "PNG", ReadDpi: true}, 0, "")
 
-	// Draw a border around the image
-	pdf.SetLineWidth(borderWidth)
-	pdf.Rect(x, y, wimg, himg, "D")
-
 	return pdf
 }
