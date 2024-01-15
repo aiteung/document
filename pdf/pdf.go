@@ -217,7 +217,7 @@ func AddText(pdf *gofpdf.Fpdf, x, y float64, text string) *gofpdf.Fpdf {
 	return pdf
 }
 
-func ImageCustomize(pdf *gofpdf.Fpdf, filename, urlimage string, x, y, w, h, borderWidth float64) *gofpdf.Fpdf {
+func ImageCustomize(pdf *gofpdf.Fpdf, filename, urlimage string, x, y, w, h, wimg, himg, borderWidth float64) *gofpdf.Fpdf {
 	if !FileExists(filename) {
 		DownloadFile(filename, urlimage)
 	}
@@ -227,7 +227,7 @@ func ImageCustomize(pdf *gofpdf.Fpdf, filename, urlimage string, x, y, w, h, bor
 
 	// Draw a border around the image
 	pdf.SetLineWidth(borderWidth)
-	pdf.Rect(x, y, w, h, "D")
+	pdf.Rect(x, y, wimg, himg, "D")
 
 	return pdf
 }
