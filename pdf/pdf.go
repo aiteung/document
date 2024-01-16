@@ -233,3 +233,29 @@ func AddTextCustomSize(pdf *gofpdf.Fpdf, x, y, size float64, text string) *gofpd
 	pdf.Text(x, y, text)
 	return pdf
 }
+
+func SetTableContentCustomY(pdf *gofpdf.Fpdf, tbl [][]string, widths []float64, align []string, customY []float64) *gofpdf.Fpdf {
+	pdf.SetFont("Times", "", 10)
+	pdf.SetFillColor(255, 255, 255)
+
+	for i, line := range tbl {
+		// Calculate the total width of the table
+		totalWidth := 0.0
+		for _, width := range widths {
+			totalWidth += width
+		}
+
+		// Calculate the X-coordinate to center the table on the page
+
+		x := 30.0
+
+		// Set the X-coordinate and custom Y-coordinate
+		pdf.SetXY(x, customY[i])
+
+		for j, str := range line {
+			pdf.CellFormat(widths[j], 7, str, "0", 0, align[j], true, 0, "")
+		}
+		pdf.Ln(-1)
+	}
+	return pdf
+}
