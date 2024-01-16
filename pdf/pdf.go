@@ -227,3 +227,9 @@ func ImageCustomize(pdf *gofpdf.Fpdf, filename, urlimage string, x, y, w, h, wim
 
 	return pdf
 }
+
+func AddTextCustomSize(pdf *gofpdf.Fpdf, x, y, size float64, text string) *gofpdf.Fpdf {
+	pdf.SetFont("Times", "", size)
+	pdf.Text(x, y, text)
+	return pdf
+}
