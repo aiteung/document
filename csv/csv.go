@@ -9,10 +9,19 @@ import (
 )
 
 func CreateCSVFileWithDatabaseData(filename string, data [][]string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
+	var file *os.File
+	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+		file, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+	} else {
+		file, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
 	}
+
 	defer file.Close()
 
 	writer := csv.NewWriter(file)
