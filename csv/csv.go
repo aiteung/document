@@ -8,15 +8,18 @@ import (
 	"os"
 )
 
-func CreateCSVFileWithDatabaseData(filename string, data [][]string) error {
+func CreateCSVFileWithDatabaseData(filename string, data [][]string) (err error) {
 	var file *os.File
-	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		file, err := os.Create(filename)
+
+	_, s := os.Stat(filename)
+	switch s {
+	case nil:
+		file, err = os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		if err != nil {
 			return err
 		}
-	} else {
-		file, err := os.Open(filename)
+	default:
+		file, err = os.Create(filename)
 		if err != nil {
 			return err
 		}
