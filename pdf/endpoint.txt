@@ -1,0 +1,327 @@
+func (bap *BAPHandler) GetDataBAPReguler(ctx *fiber.Ctx) (err error) {
+	phone := ctx.Get("phoneNum")
+	if phone == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Phone number tidak ditemukan")
+	}
+
+	dataDosen, err := bap.dosen.GetDataDosenByPhoneNum(ctx.Context(), phone)
+	if err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "Data dosen tidak ditemukan ")
+	}
+
+	listKelas, err := bap.jadwal.GetJadwalByNIDNKelas(ctx.Context(), dataDosen.NIDN, "Reguler", "2023-2024", "1")
+	if err != nil {
+		log.Printf("Error : %+v\n", err)
+	}
+
+	bapFinal := make([]mdl.BAP, 0, len(listKelas))
+
+BAPOUTER:
+	for _, v := range listKelas {
+		rps, _ := bap.RPS.GetMateriPerkuliahanAllKelas(ctx.Context(), v.KodeMk, v.ThnAkademik, v.Periode, v.KelasAkademik)
+		if len(rps) == 0 {
+			err = fiber.NewError(fiber.StatusNotAcceptable, "Data Materi Perkuliahan untuk tidak ada. Materinya (Rencana Pembelajaran) bisa ditambahkan duluu di SIAP DOSEN yaaaa.")
+			break BAPOUTER
+		}
+
+		listMhs, e := bap.krs.GetMahasiswaKRS(ctx.Context(), v.KodeMk, v.ThnAkademik, v.Kelas)
+		if e != nil {
+			err = e
+			break BAPOUTER
+		}
+
+		mapper := make(map[string][]mdl.TblMhsKehadiran, len(listMhs))
+		for _, mhs := range listMhs {
+			dataKehadiranMhs, ee := bap.mhs.GetListMahasiswNameByNIM(ctx.Context(), mhs.Nim, v.KodeMk, v.ThnAkademik, v.Kelas)
+			if ee != nil {
+				err = ee
+				break BAPOUTER
+			}
+
+			mapper[mhs.Nim] = kehadiran.FillEmptyKehadiran(&v, &mhs, dataKehadiranMhs)
+		}
+		if strings.Contains(v.NamaMKInd, "&amp;") {
+			v.NamaMKInd = strings.Replace(v.NamaMKInd, "&amp;", "dan", 1)
+		}
+		//dataKehadiranMhs, e := bap.mhs.GetListMahasiswName(ctx.Context(), v.KodeMk, v.ThnAkademik, v.Kelas)
+		//if e != nil {
+		//	err = e
+		//	break BAPOUTER
+		//}
+		exampleMhs, e := bap.mhs.GetExampleMahasiswa(ctx.Context(), v.KodeMk, v.ThnAkademik, v.Kelas)
+		if e != nil {
+			err = e
+			break BAPOUTER
+		}
+		absenDosen, _ := bap.kelas.GetAllPertemuan(ctx.Context(), v.KodeMk, v.NIDN, v.Kelas)
+		if len(absenDosen) < 12 {
+			err = fiber.NewError(fiber.StatusNotAcceptable, "Data Absen Dosen belum lengkap. Absennya bisa diisi duluu di SIAP DOSEN yaaaa.")
+			break BAPOUTER
+		}
+
+		nilai, e := bap.nilai.GetByKelasKodeMK(ctx.Context(), mdl.TblNilai{KodeMK: v.KodeMk, Kls: v.Kelas, ThnAkademik: v.ThnAkademik, Periode: v.Periode})
+		if e != nil {
+			err = e
+			break BAPOUTER
+		}
+
+		elems := mdl.BAP{
+			NamaPengajar:   dataDosen.Nama,
+			KodeMK:         v.KodeMk,
+			Semester:       angkatan.CountSemester(exampleMhs.Angkatan),
+			SKS:            v.SKS,
+			TahunAkademik:  v.ThnAkademik,
+			Periode:        v.Periode,
+			NamaMatkul:     html.UnescapeString(v.NamaMKInd),
+			DataSiswa:      mapper,
+			DataNilaiSiswa: nilai,
+			RKP:            rps,
+			Programstudi:   v.Prodi,
+			Kelas:          v.Kelas,
+			PertemuanDosen: absenDosen,
+			Mulaikuliah:    v.JM,
+			Selesaikuliah:  v.JS,
+			Ruang:          v.Ruang}
+		bapFinal = append(bapFinal, elems)
+	}
+
+	if err != nil {
+		return
+	}
+	var judul []string
+	var pdf string
+
+BAPFILE:
+	for _, v := range bapFinal {
+		text := []string{
+			"UNIVERSITAS LOGISTIK DAN BISNIS INTERNASIONAL",
+			"Berita Acara Perkuliahan dan Absensi Perkuliahan",
+		}
+
+		head := []string{
+			"Kode Matakuliah/Nama Matakuliah   ",
+			"Kelas  ",
+			"Semester/SKS  ",
+		}
+
+		sep := []string{
+			":",
+			":",
+			":",
+		}
+
+		Value := []string{
+			fmt.Sprintf("%s/%s", v.KodeMK, v.NamaMatkul),
+			v.Kelas,
+			fmt.Sprintf("%s/%s SKS", v.Semester, v.SKS),
+		}
+
+		header := []string{
+			"Head",
+			"Separator",
+			"Value",
+		}
+		csv := [][]string{
+			header,
+		}
+
+		for i := range Value {
+			row := []string{
+				head[i],
+				sep[i],
+				Value[i],
+			}
+			csv = append(csv, row)
+		}
+
+		headers := []string{
+			"Pertemuan",
+			"Tanggal",
+			"Materi Perkuliahan",
+			"Jam Mulai",
+			"Jam Selesai",
+		}
+
+		csv2 := [][]string{
+			headers,
+		}
+
+		for i, vv := range v.PertemuanDosen {
+			row := []string{
+				fmt.Sprintf("%d", i+1),
+				vv.Tanggal.Format("2006-01-02"),
+				vv.PokokBahasan,
+				vv.JM.Format("15:04"),
+				vv.JS.Format("15:04"),
+			}
+			csv2 = append(csv2, row)
+		}
+
+		headers2 := []string{
+			"NPM",
+			"Nama",
+			"1",
+			"2",
+			"3",
+			"4",
+			"5",
+			"6",
+			"7",
+			"8",
+			"Total",
+		}
+
+		csv3 := [][]string{
+			headers2,
+		}
+
+		for _, x := range v.DataSiswa {
+			rows := make([]string, 0, 10)
+			rows = append(rows, x[0].Nim, x[0].Nama)
+			hadir := 0
+
+			if len(x) < 8 {
+				err = fiber.NewError(fiber.StatusNotAcceptable, fmt.Sprintf("Data Kehadiran Mahasiswa belum lengkap matakuliah %s Kelas %s. Kehadirannya masih mahasiswa %s masih %d bisa diisi duluu di SIAP DOSEN yaaaa.", v.NamaMatkul, v.Kelas, x[0].Nim, len(x)))
+				break BAPFILE
+			}
+
+			for _, k := range x[:8] {
+				if k.Status == "H" {
+					hadir++
+				}
+				rows = append(rows, k.Status)
+			}
+			rows = append(rows, strconv.Itoa(hadir))
+			csv3 = append(csv3, rows)
+		}
+
+		headers3 := []string{
+			"NPM",
+			"Nama",
+			"9",
+			"10",
+			"11",
+			"12",
+			"13",
+			"14",
+			"15",
+			"16",
+			"Total",
+		}
+
+		csv4 := [][]string{
+			headers3,
+		}
+
+		for _, x := range v.DataSiswa {
+			rows := make([]string, 0, 10)
+			rows = append(rows, x[0].Nim, x[0].Nama)
+			hadir := 0
+
+			if len(x) < 16 {
+				err = fiber.NewError(fiber.StatusNotAcceptable, fmt.Sprintf("Data Kehadiran Mahasiswa belum lengkap matakuliah %s Kelas %s. Kehadirannya masih mahasiswa %s masih %d bisa diisi duluu di SIAP DOSEN yaaaa.", v.NamaMatkul, v.Kelas, x[0].Nim, len(x)))
+				break BAPFILE
+			}
+
+			for _, k := range x[8:] {
+				if k.Status == "H" {
+					hadir++
+				}
+				rows = append(rows, k.Status)
+			}
+			rows = append(rows, strconv.Itoa(hadir))
+
+			csv4 = append(csv4, rows)
+		}
+
+		headers4 := []string{
+			"NPM",
+			"Kehadiran",
+			"Tugas 1",
+			"Tugas 2",
+			"Tugas 3",
+			"Tugas 4",
+			"Tugas 5",
+			"UTS",
+			"UAS",
+			"Jumlah",
+			"Nilai",
+		}
+
+		csv5 := [][]string{
+			headers4,
+		}
+
+		for _, w := range v.DataNilaiSiswa {
+			rows := []string{
+				w.Nim,
+				strconv.Itoa(int(w.Kehadiran)) + "%",
+				strconv.Itoa(int(w.Tugas)),
+				strconv.Itoa(int(w.Tugas2)),
+				strconv.Itoa(int(w.Tugas3)),
+				strconv.Itoa(int(w.Tugas4)),
+				strconv.Itoa(int(w.Tugas5)),
+				strconv.Itoa(int(w.UTS)),
+				strconv.Itoa(int(w.UAS)),
+				strconv.Itoa(int(w.Jumlah)),
+				w.Nilai,
+			}
+			csv5 = append(csv5, rows)
+		}
+
+		//fmt.Println(v.DataNilaiSiswa)
+
+		filename := fmt.Sprintf("2324-1/BAP-%s-%s.csv", strings.ReplaceAll(v.NamaMatkul, "/", "-"), v.Kelas)
+		err := dc.CreateCSVFileWithDatabaseData(filename, csv)
+		if err != nil {
+			fmt.Printf("Error CSV 1 : %s\n", err.Error())
+			return fiber.NewError(fiber.StatusNotAcceptable, "Cannot build csv ")
+		}
+
+		filename2 := fmt.Sprintf("DataPertemuan-%s.csv", v.Kelas)
+		err2 := dc.CreateCSVFileWithDatabaseData(filename2, csv2)
+		if err2 != nil {
+			fmt.Printf("Error CSV 2 : %s\n", err.Error())
+			return fiber.NewError(fiber.StatusNotAcceptable, "Cannot build the second csv ")
+		}
+
+		filename3 := fmt.Sprintf("Data Kehadiran-%s-%s.csv", strings.ReplaceAll(v.NamaMatkul, "/", "-"), v.Kelas)
+		err3 := dc.CreateCSVFileWithDatabaseData(filename3, csv3)
+		if err3 != nil {
+			fmt.Printf("Error CSV 3 : %s\n", err.Error())
+			return fiber.NewError(fiber.StatusNotAcceptable, "Cannot build the third csv ")
+		}
+
+		filename4 := fmt.Sprintf("Data Kehadiran2-%s-%s.csv", strings.ReplaceAll(v.NamaMatkul, "/", "-"), v.Kelas)
+		err4 := dc.CreateCSVFileWithDatabaseData(filename4, csv4)
+		if err4 != nil {
+			fmt.Printf("Error CSV 4 : %s\n", err.Error())
+			return fiber.NewError(fiber.StatusNotAcceptable, "Cannot build the fourth csv")
+		}
+		filename5 := fmt.Sprintf("Data Nilai-%s-%s.csv", strings.ReplaceAll(v.NamaMatkul, "/", "-"), v.Kelas)
+		err5 := dc.CreateCSVFileWithDatabaseData(filename5, csv5)
+		if err5 != nil {
+			fmt.Printf("Error CSV 5 : %s\n", err.Error())
+			return fiber.NewError(fiber.StatusNotAcceptable, "Cannot build the fifth csv")
+		}
+
+		pdf = bap2.CreatePDFBAP(text, filename, filename2, filename3, filename4, filename5)
+
+		e := uploader.Uploadloader(strings.Replace(filename, ".csv", ".pdf", -1))
+		if e != nil {
+			return e
+		}
+
+		judul = append(judul, pdf)
+	}
+
+	if err != nil {
+		return
+	}
+
+	err = fiber2.
+		NewReturnData(fiber.StatusOK, true, "pdf berhasil dibuat", judul).
+		WriteResponseBody(ctx)
+
+	return
+}
