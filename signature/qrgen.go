@@ -33,7 +33,18 @@ func CreateToken(docid, url string, data types.SignatureData) (token string) {
 
 func CreateQRCode(link string, filename string) error {
 	// Generate QR code
-	err := qrcode.WriteFile(link, qrcode.High, 256, filename)
+	err := qrcode.WriteFile(link, qrcode.Highest, 256, filename)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("QR code generated and saved to %s\n", filename)
+	return nil
+}
+
+func CreateQRCodeMedium(link string, filename string) error {
+	// Generate QR code
+	err := qrcode.WriteFile(link, qrcode.Medium, 256, filename)
 	if err != nil {
 		return err
 	}
