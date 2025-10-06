@@ -52,3 +52,14 @@ func CreateQRCodeMedium(link string, filename string) error {
 	fmt.Printf("QR code generated and saved to %s\n", filename)
 	return nil
 }
+
+func CreateQRCodeLarge(link string, filename string, size int) error {
+	// Generate QR code
+	err := qrcode.WriteFile(link, qrcode.Highest, size, filename)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("QR code generated and saved to %s\n", filename)
+	return nil
+}

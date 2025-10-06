@@ -6,6 +6,13 @@ type SignatureData struct {
 	PemilikDocument string `json:"pemilik_document"`
 }
 
+type SignatureDataNew struct {
+	PenandaTangan   string `json:"penanda-tangan"`
+	DocName         string `json:"doc-name"`
+	PemilikDocument string `json:"pemilik_document"`
+	Universitas     string `json:"universitas"`
+}
+
 type RequestData struct {
 	Id   string        `json:"id"`
 	Data SignatureData `json:"data"`
