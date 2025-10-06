@@ -31,6 +31,29 @@ func CreateToken(docid, url string, data types.SignatureData) (token string) {
 	return token
 }
 
+func CreateTokenWithUni(docid, url string, data types.SignatureDataNew) (token string) {
+	resp := new(types.TokenResp)
+	body := new(types.RequestDataNew)
+
+	body.Id = docid
+	body.Data = data
+
+	res, err := client.CreateRequestHTTP().
+		SetBody(body).
+		Post(url)
+
+	if err != nil {
+		return "error ni kakak sistem akademiknya silahkan hubungi admin yaaaaa........"
+	}
+
+	defer res.Body.Close()
+	_ = json.Unmarshal(res.Bytes(), &resp)
+
+	token = resp.Token
+
+	return token
+}
+
 func CreateQRCode(link string, filename string) error {
 	// Generate QR code
 	err := qrcode.WriteFile(link, qrcode.Highest, 256, filename)

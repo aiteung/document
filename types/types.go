@@ -18,6 +18,10 @@ type RequestData struct {
 	Data SignatureData `json:"data"`
 }
 
+type RequestDataNew struct {
+	Id   string           `json:"id"`
+	Data SignatureDataNew `json:"data"`
+}
 type TokenResp struct {
 	Token string `json:"token"`
 }
